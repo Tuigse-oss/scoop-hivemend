@@ -1,0 +1,62 @@
+name: update
+
+# Updates bucket/hivemend.json to the latest published Hivemend release. Runs
+# every six hours and on demand, with this repository's own token, so no
+# secret is needed in either repository.
+on:
+  schedule:
+    - cron: "23 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find the latest release
+        id: latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # --exclude-drafts/prereleases: only what users should get.
+          tag=$(gh release list --repo Tuigse-oss/HiveMend --exclude-drafts --exclude-pre-releases \
+                  --limit 1 --json tagName --jq '.[0].tagName // ""')
+          if [ -z "$tag" ]; then
+            echo "No published Hivemend release yet."
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.latest.outputs.tag != ''
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.latest.outputs.tag != ''
+        with:
+          repository: Tuigse-oss/HiveMend
+          ref: ${{ steps.latest.outputs.tag }}
+          path: hivemend
+          sparse-checkout: packaging
+          persist-credentials: false
+      - name: Render and commit the manifest
+        if: steps.latest.outputs.tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.latest.outputs.tag }}
+        run: |
+          gh release download "$TAG" --repo Tuigse-oss/HiveMend --pattern SHA256SUMS.txt --dir "$RUNNER_TEMP"
+          python3 hivemend/packaging/render.py "${TAG#v}" "$RUNNER_TEMP/SHA256SUMS.txt" "$RUNNER_TEMP/out"
+          mkdir -p bucket
+          cp "$RUNNER_TEMP/out/scoop/hivemend.json" bucket/hivemend.json
+          git add bucket/hivemend.json
+          if git diff --cached --quiet; then
+            echo "bucket/hivemend.json is already at $TAG"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "hivemend: update to ${TAG#v}"
+          git push
