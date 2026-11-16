@@ -1,13 +1,13 @@
 {
-    "version": "0.1.5",
+    "version": "0.1.6",
     "description": "Free, open-source registry cleaner for Windows 10/11 with backed-up, transactional repairs. No telemetry, no upsells.",
     "homepage": "https://github.com/Tuigse-oss/HiveMend",
     "license": "MIT|Apache-2.0",
     "notes": "Backups are kept in %LOCALAPPDATA%\\HiveMend and survive uninstalling.",
     "architecture": {
         "64bit": {
-            "url": "https://github.com/Tuigse-oss/HiveMend/releases/download/v0.1.5/Hivemend-v0.1.5-x86_64-windows.zip",
-            "hash": "997f430379b0a91e32fc40a65b0432e053342778f96f530c6703f754379b4254"
+            "url": "https://github.com/Tuigse-oss/HiveMend/releases/download/v0.1.6/Hivemend-v0.1.6-x86_64-windows.zip",
+            "hash": "f4c07d6923d9d2113f3e0d869cdbff54ac33d654bb9508081764a9b2813227c3"
         }
     },
     "bin": "Hivemend.exe",
